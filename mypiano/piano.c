@@ -91,7 +91,7 @@ int main() {
         for (i = 0; i < 10; i++) {
             bx = WHITE_SIZE * (i + 1) - BLACK_SIZE / 2;
             if ((i != 0 && i != 3 && i != 7) &&
-                (50 * i + 35 < x && 50 * i + 65 > x) && (y > 200 && y < 300)) {
+                (bx < x && bx + BLACK_SIZE > x) && (y > 200 && y < 300)) {
                 if (i < 3) {
                     j = i - 1 + 10;
                 } else if (i < 7) {
@@ -106,7 +106,7 @@ int main() {
         }
         for (i = 0; i < 10; i++) {
             wx = WHITE_SIZE * (i + 1);
-            if (flag != 1 && (50 * (i + 1) < x && 50 * (i + 2) > x) &&
+            if (flag != 1 && (wx < x && wx+WHITE_SIZE > x) &&
                 y > 100 && y < 300) {
                 rec[k] = piano(i);
                 k++;
