@@ -3,113 +3,114 @@
 
 #define WINDOWSIZEW 600
 #define WINDOWSIZEH 400
-#define SIZE 50
+#define WHITE_SIZE 50
+#define BLACK_SIZE 30
 
 #define KEY_TYPE_BLACK 0
 #define KEY_TYPE_WHITE 1
 
 typedef struct key {
-  char* sound_name;
+    char* sound_name;
 } Key;
 
+int layer1, layer2, layer3;
+int sound[17];
+int wx, bx;
+
+int piano(int i) {
+    int layer, x, y, w, h;
+    if (i < 10) {
+        layer = layer2;
+        x = wx;
+        y = 100;
+        w = WHITE_SIZE;
+        h = 200;
+    } else {
+        layer = layer3;
+        x = bx;
+        y = 200;
+        w = BLACK_SIZE;
+        h = 100;
+    }
+    HgLClear(layer2);
+    HgLClear(layer3);
+    HgWBoxFill(layer, x, y, w, h, 1);
+    HgSoundPlay(sound[i]);
+    return i;
+}
+
 int main() {
-  hgevent* event;
-  double x, y;
-  int i, j;
-  int layer1, layer2, layer3;
-  int song;
-  int sound1[10];
-  int sound2[7];
+    hgevent* event;
+    double x, y;
+    int i, j, flag;
 
-  HgOpen(WINDOWSIZEW, WINDOWSIZEH);
+    HgOpen(WINDOWSIZEW, WINDOWSIZEH);
 
-  layer1 = HgWAddLayer(0);
-  layer2 = HgWAddLayer(0);
-  layer3 = HgWAddLayer(0);
+    layer1 = HgWAddLayer(0);
+    layer2 = HgWAddLayer(0);
+    layer3 = HgWAddLayer(0);
 
-  song = HgSoundLoad("noraneko.mp3");
-
-  char buf[10] = "";
-  for (i = 0; i < 10; i++) {
-    sprintf(buf, "w%d.mp3", i);
-    sound1[i] = HgSoundLoad(buf);
-  }
-
-  sound2[0] = HgSoundLoad("b0.mp3");
-  sound2[1] = HgSoundLoad("b1.mp3");
-  sound2[2] = HgSoundLoad("b2.mp3");
-  sound2[3] = HgSoundLoad("b3.mp3");
-  sound2[4] = HgSoundLoad("b4.mp3");
-  sound2[5] = HgSoundLoad("b5.mp3");
-  sound2[6] = HgSoundLoad("b6.mp3");
-
-  HgLMove(layer1, 1);
-  HgWSetFillColor(layer1, HG_BLACK);
-  HgWSetFillColor(layer2, HG_GRAY);
-  HgWSetFillColor(layer3, HG_GRAY);
-
-  for (i = 0; i < 10; i++) {
-    HgBoxFill(SIZE * (i + 1), 100, 50, 200, 1);
-    if (i != 0 && i != 3 && i != 7) {
-      HgWBoxFill(layer1, SIZE * i + 35, 200, 30, 100, 0);
+    char buf[17] = "";
+    for (i = 0; i < 17; i++) {
+        sprintf(buf, "%d.mp3", i);
+        sound[i] = HgSoundLoad(buf);
     }
-  }
 
-  HgBox(0, WINDOWSIZEH - SIZE, SIZE, SIZE);
-
-  HgSetEventMask(HG_MOUSE_DOWN);
-  for (;;) {
-    event = HgEvent();
-    if (event->type != HG_MOUSE_DOWN) {
-      continue;
-    }
-    x = event->x;
-    y = event->y;
-
-    // printf("x=%5.2f, y=%5.2f\n", x, y);
+    HgLMove(layer1, 1);
+    HgWSetFillColor(layer1, HG_BLACK);
+    HgWSetFillColor(layer2, HG_GRAY);
+    HgWSetFillColor(layer3, HG_GRAY);
 
     for (i = 0; i < 10; i++) {
-      if (((50 * (i + 1) < x && 50 * (i + 2) > x) && (y <= 200 && y > 100)) ||
-          ((i == 0 && i == 3 && i == 7) &&
-               (50 * (i + 1) < x && 50 * (i + 2) - 15 > x) ||
-           (i == 2 && i == 6 && i == 9) &&
-               (50 * (i + 2) > x && 50 * (i + 1) + 15 < x) ||
-           (50 * (i + 1) + 15 < x && 50 * (i + 2) - 15 > x)) &&
-              y > 200 && y < 300) {
-        HgLClear(layer2);
-        HgLClear(layer3);
-        HgWBoxFill(layer2, SIZE * (i + 1), 100, 50, 200, 1);
-        HgSoundPlay(sound1[i]);
-      }
-
-      if ((i != 0 && i != 3 && i != 7) &&
-          (50 * i + 35 < x && 50 * i + 65 > x) && (y > 200 && y < 300)) {
-        HgLClear(layer2);
-        HgLClear(layer3);
-        HgWBoxFill(layer3, SIZE * i + 35, 200, 30, 100, 0);
-        if (i < 3) {
-          j = i - 1;
-        } else if (i < 7) {
-          j = i - 2;
-        } else {
-          j = i - 3;
+        HgBoxFill(WHITE_SIZE * (i + 1), 100, WHITE_SIZE, 200, 1);
+        if (i != 0 && i != 3 && i != 7) {
+            HgWBoxFill(layer1, WHITE_SIZE * i + 35, 200, BLACK_SIZE, 100, 0);
         }
-        HgSoundPlay(sound2[j]);
-      }
-
-      if (x < 50 && y < 50) {
-        HgSoundPlay(song);
-      }
-      if (x > 550 && y < 50) {
-        HgSoundStop(song);
-      }
     }
 
-    if (x < 50 && y > 350) {
-      break;
-    }
-  }
+    HgBox(0, WINDOWSIZEH - WHITE_SIZE, 50, 50);
 
-  HgClose();
-  return 0;
+    HgSetEventMask(HG_MOUSE_DOWN);
+    for (;;) {
+        event = HgEvent();
+        if (event->type != HG_MOUSE_DOWN) {
+            continue;
+        }
+        x = event->x;
+        y = event->y;
+
+        // printf("x=%5.2f, y=%5.2f\n", x, y);
+
+        flag = 0;
+
+        for (i = 0; i < 10; i++) {
+            bx = WHITE_SIZE * (i + 1) - BLACK_SIZE / 2;
+            if ((i != 0 && i != 3 && i != 7) &&
+                (50 * i + 35 < x && 50 * i + 65 > x) && (y > 200 && y < 300)) {
+                if (i < 3) {
+                    j = i - 1 + 10;
+                } else if (i < 7) {
+                    j = i - 2 + 10;
+                } else {
+                    j = i - 3 + 10;
+                }
+                piano(j);
+                flag = 1;
+            }
+        }
+        for (i = 0; i < 10; i++) {
+            wx = WHITE_SIZE * (i + 1);
+            if (flag != 1 && (50 * (i + 1) < x && 50 * (i + 2) > x) &&
+                y > 100 && y < 300) {
+                piano(i);
+            }
+        }
+
+        if (x < 50 && y > 350) {
+            break;
+        }
+    }
+
+    HgClose();
+    return 0;
 }
