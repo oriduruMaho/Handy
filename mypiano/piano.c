@@ -42,7 +42,8 @@ int piano(int i) {
 int main() {
     hgevent* event;
     double x, y;
-    int i, j, flag;
+    int i, j, k, flag;
+    int rec[100];
 
     HgOpen(WINDOWSIZEW, WINDOWSIZEH);
 
@@ -68,7 +69,11 @@ int main() {
         }
     }
 
+    k = 0;
+
     HgBox(0, WINDOWSIZEH - WHITE_SIZE, 50, 50);
+    HgBox(325, 325, 50, 50);
+    HgBox(400, 325, 50, 50);
 
     HgSetEventMask(HG_MOUSE_DOWN);
     for (;;) {
@@ -94,16 +99,29 @@ int main() {
                 } else {
                     j = i - 3 + 10;
                 }
-                piano(j);
+                rec[k] = piano(j);
                 flag = 1;
+                k++;
             }
         }
         for (i = 0; i < 10; i++) {
             wx = WHITE_SIZE * (i + 1);
             if (flag != 1 && (50 * (i + 1) < x && 50 * (i + 2) > x) &&
                 y > 100 && y < 300) {
-                piano(i);
+                rec[k] = piano(i);
+                k++;
             }
+        }
+
+        if (325 < x && x < 375 && 325 < y) {
+            for (i = 0; i < k; i++) {
+                piano(rec[i]);
+                HgSleep(0.5);
+            }
+        }
+
+        if (400 < x && x < 450 && 325 < y) {
+            k = 0;
         }
 
         if (x < 50 && y > 350) {
