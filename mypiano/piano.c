@@ -39,6 +39,16 @@ int piano(int i) {
     return i;
 }
 
+int black(int i) {
+    if (i < 3) {
+        return i - 1 + 10;
+    } else if (i < 7) {
+        return i - 2 + 10;
+    } else {
+        return i - 3 + 10;
+    }
+}
+
 int main() {
     hgevent* event;
     double x, y;
@@ -69,14 +79,12 @@ int main() {
         }
     }
 
-    k = 0;
-
     HgBox(0, WINDOWSIZEH - WHITE_SIZE, 50, 50);
     HgBox(325, 325, 50, 50);
     HgBox(400, 325, 50, 50);
 
     HgSetEventMask(HG_MOUSE_DOWN);
-    for (;;) {
+    for (k = 0;;) {
         event = HgEvent();
         if (event->type != HG_MOUSE_DOWN) {
             continue;
@@ -92,22 +100,15 @@ int main() {
             bx = WHITE_SIZE * (i + 1) - BLACK_SIZE / 2;
             if ((i != 0 && i != 3 && i != 7) &&
                 (bx < x && bx + BLACK_SIZE > x) && (y > 200 && y < 300)) {
-                if (i < 3) {
-                    j = i - 1 + 10;
-                } else if (i < 7) {
-                    j = i - 2 + 10;
-                } else {
-                    j = i - 3 + 10;
-                }
-                rec[k] = piano(j);
+                rec[k] = piano(black(i));
                 flag = 1;
                 k++;
             }
         }
         for (i = 0; i < 10; i++) {
             wx = WHITE_SIZE * (i + 1);
-            if (flag != 1 && (wx < x && wx+WHITE_SIZE > x) &&
-                y > 100 && y < 300) {
+            if (flag != 1 && (wx < x && wx + WHITE_SIZE > x) && y > 100 &&
+                y < 300) {
                 rec[k] = piano(i);
                 k++;
             }
@@ -115,6 +116,15 @@ int main() {
 
         if (325 < x && x < 375 && 325 < y) {
             for (i = 0; i < k; i++) {
+                wx = WHITE_SIZE * (rec[i] + 1);
+                if (rec[i] < 12) {
+                    j = rec[i] - 9 + 1;
+                } else if (rec[i] < 15) {
+                    j = rec[i] - 8 + 1;
+                } else {
+                    j = rec[i] - 7 + 1;
+                }
+                bx = WHITE_SIZE * j - BLACK_SIZE / 2;
                 piano(rec[i]);
                 HgSleep(0.5);
             }

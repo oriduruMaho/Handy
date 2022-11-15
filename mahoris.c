@@ -39,40 +39,20 @@
 #define SIZE 50           //正方形の辺の長さ
 
 int layer1, layer2;  //レイヤーを分けるための変数
+int x, y;            //図形の座標
+int v;               //落ちる速度
 
-int box(int x, int y) { 
-    HgWBoxFill(layer1, x, y, SIZE, SIZE, 0); 
+int box(int x, int y) {
+    HgWBoxFill(layer1, x, y, SIZE, SIZE, 0);
     return 0;
 }
 
-int main() {
-    hgevent *event;  //イベントのためのもの
-    //変数の宣言
-    int key;      //入力したキーを覚えておくための変数
-    int x, y;     //図形の座標
-    int v;        //落ちる速度
-    int i, j, k;  //カウンタ変数
-    int random;   //乱数を覚えておくための変数
-    int beside, height;  //ブロックがどこにあるか確認するために配列で使う変数
-    int tate;   // y座標を変えるための変数
-    int count;  //横と縦を切り替えるためのカウント変数
-    int num;    //消した列の数を数えるための変数
-    int layer1, layer2;  //レイヤーを分けるための変数
-    int array[6][9] = {};  //どこにブロックが落ちたか覚えておくための配列
-
-    tate = 0;  //初期化
-    num = 0;
-
-    HgOpen(WINDOWSIZE_W, WINDOWSIZE_H);  //ウィンドウを表示
-
-    // 2つレイヤーを追加する
-    layer1 = HgWAddLayer(0);  //アニメーション用レイヤー
-    layer2 = HgWAddLayer(0);  //記録用レイヤー
-
-    HgLMove(layer1, 1);  //アニメーション用レイヤーを最前面に移動させておく
-
+void starttxt(void) {
     //黒い壁と底を表示（ベースレイヤー）
     HgSetFillColor(HG_BLACK);
+    //レイヤー1と2で図形の色をかえる
+    HgWSetFillColor(layer1, HG_BLUE);   //青
+    HgWSetFillColor(layer2, HG_GREEN);  //緑
     //壁と底の厚さはそれぞれ20
     HgBoxFill(0, 0, 20, WINDOWSIZE_H, 0);
     HgBoxFill(WINDOWSIZE_W - 20, 0, 20, WINDOWSIZE_H, 0);
@@ -87,8 +67,49 @@ int main() {
     CenteredText(layer1, WINDOWSIZE_W / 2, 200, "d:左移動\n");
     CenteredText(layer1, WINDOWSIZE_W / 2, 180, "s:縦横切り替え\n");
     CenteredText(layer1, WINDOWSIZE_W / 2, 100, "キー入力でゲームスタート\n");
-    CenteredText(layer1, WINDOWSIZE_W / 2, 80, "スペースキー入力でゲーム終了\n");
-    CenteredText(layer1, WINDOWSIZE_W / 2, 60, "e:イージー n:ノーマル h:ハード\n");
+    CenteredText(layer1, WINDOWSIZE_W / 2, 80,
+                 "スペースキー入力でゲーム終了\n");
+    CenteredText(layer1, WINDOWSIZE_W / 2, 60,
+                 "e:イージー n:ノーマル h:ハード\n");
+}
+
+void gameover(void) {
+    //ゲームオーバーになった時
+    HgWSetFont(layer1, HG_MB, 20);              //明朝体太字で表示
+    for (y = WINDOWSIZE_H; y >= 250; y += v) {  //上から文字が降りてくる
+        HgLClear(layer1);
+        CenteredText(layer1, WINDOWSIZE_W / 2, y, "ゲームオーバー\n");
+        HgSleep(0.01);
+    }
+    HgSleep(0.5);
+    CenteredText(layer1, WINDOWSIZE_W / 2, 100,
+                 "キー入力でウィンドウが閉じます\n");
+}
+
+int main() {
+    hgevent *event;  //イベントのためのもの
+    //変数の宣言
+    int key;      //入力したキーを覚えておくための変数
+    int i, j, k;  //カウンタ変数
+    int random;   //乱数を覚えておくための変数
+    int beside, height;  //ブロックがどこにあるか確認するために配列で使う変数
+    int tate;   // y座標を変えるための変数
+    int count;  //横と縦を切り替えるためのカウント変数
+    int num;    //消した列の数を数えるための変数
+    int array[6][9] = {};  //どこにブロックが落ちたか覚えておくための配列
+
+    tate = 0;  //初期化
+    num = 0;
+
+    HgOpen(WINDOWSIZE_W, WINDOWSIZE_H);  //ウィンドウを表示
+
+    // 2つレイヤーを追加する
+    layer1 = HgWAddLayer(0);  //アニメーション用レイヤー
+    layer2 = HgWAddLayer(0);  //記録用レイヤー
+
+    HgLMove(layer1, 1);  //アニメーション用レイヤーを最前面に移動させておく
+
+    starttxt();
 
     // sが入力されるまで待機
     for (;;) {
@@ -109,10 +130,6 @@ int main() {
     }
 
     HgSetEventMask(HG_KEY_DOWN);  //キー入力のためのイベントセット
-
-    //レイヤー1と2で図形の色をかえる
-    HgWSetFillColor(layer1, HG_BLUE);   //青
-    HgWSetFillColor(layer2, HG_GREEN);  //緑
 
     for (;;) {  //以下ゲーム部分
         //乱数を一つ生成
@@ -208,8 +225,8 @@ int main() {
                 //スペースキー入力でプログラム終了
                 if (key == ' ') {
                     HgLClear(layer1);
-                    CenteredText(layer1, WINDOWSIZE_W / 2 , WINDOWSIZE_H / 2,
-                            "終了します\n");
+                    CenteredText(layer1, WINDOWSIZE_W / 2, WINDOWSIZE_H / 2,
+                                 "終了します\n");
                     HgSleep(3);  // 3秒後に終了
                     HgClose();
                     return 0;
@@ -308,15 +325,7 @@ int main() {
         HgWText(layer2, 30, 460, "消した行の数%d\n", num);
     }
 
-    //ゲームオーバーになった時
-    HgWSetFont(layer1, HG_MB, 20);              //明朝体太字で表示
-    for (y = WINDOWSIZE_H; y >= 250; y += v) {  //上から文字が降りてくる
-        HgLClear(layer1);
-        CenteredText(layer1, WINDOWSIZE_W / 2 , y, "ゲームオーバー\n");
-        HgSleep(0.01);
-    }
-    HgSleep(0.5);
-    CenteredText(layer1, WINDOWSIZE_W / 2, 100, "キー入力でウィンドウが閉じます\n");
+    gameover();
 
     //キー入力でウィンドウを閉じてプログラム終了
     HgGetChar();
