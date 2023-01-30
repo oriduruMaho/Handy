@@ -193,8 +193,8 @@ void nightDraw(Season *pC, int num) {
             if (event->type == HG_KEY_DOWN) {  // キー入力の場合
                 key = event->ch;
                 // 十字キーで移動、スペースでホーム画面へ、アンダーバーで星座線の表示切り替え
-                if (key == HG_L_ARROW) theta -= (0.01 * M_PI);
-                if (key == HG_R_ARROW) theta += (0.01 * M_PI);
+                if (key == HG_L_ARROW) theta -= (0.005 * M_PI);
+                if (key == HG_R_ARROW) theta += (0.005 * M_PI);
                 if (key == HG_U_ARROW && -450 < updown) updown -= 5;
                 if (key == HG_D_ARROW && updown < 200) updown += 5;
                 if (key == ' ') break;
@@ -235,8 +235,9 @@ int homeImput(void) {
         x = event->x;
         y = event->y;
         for (i = 1; i < 5; i++) {
-            if (100 + 200 * (i - 1) < x && x < i * 200 && 200 < y &&
-                y < 300) {  // 季節の切り替え
+            if (WINDOWSIZE_W / 5 * i - 50 < x &&
+                x < WINDOWSIZE_W / 5 * i + 50 && 200 < y &&
+                y < 310) {  // 季節の切り替え
                 season_num = i;
                 break;
             } else if (x < 100 && 660 < y) {  // 終了

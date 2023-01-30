@@ -22,6 +22,7 @@
 */
 
 #include <handy.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -34,25 +35,37 @@
         HgWText((layer), (x - _dp1 / 2.0), (y - _dp2 / 2.0), __VA_ARGS__); \
     }
 
-#define WINDOWSIZE_W 400  // ウィンドウサイズ横
-#define WINDOWSIZE_H 500  // ウィンドウサイズ縦
-#define SIZE 50           // 正方形の辺の長さ
+#define WINDOWSIZE_W 300  // ウィンドウサイズ横
+#define WINDOWSIZE_H 600  // ウィンドウサイズ縦
+#define SIZE 30           // 正方形の辺の長さ
+#define BROCK_NUM 4       // ブロック数
+
+typedef struct Brock {
+    int x[BROCK_NUM];
+    int y[BROCK_NUM];
+    int color;
+} Brock;
+
+typedef struct Coordinate {
+    int x[BROCK_NUM];
+    int y[BROCK_NUM];
+} Coordinate;
 
 int layer1, layer2;  // レイヤーを分けるための変数
 int x, y;            // 図形の座標
 int v;               // 落ちる速度
 
-int box(int x, int y) {
-    HgWBoxFill(layer1, x, y, SIZE, SIZE, 0);
+int box(Coordinate pC, int layer) {
+    int i;
+    for (i = 0; i < BROCK_NUM; i++) {
+        HgWBoxFill(layer, pC.x[i], pC.y[i], SIZE, SIZE, 0);
+    }
     return 0;
 }
 
 void starttxt(void) {
     // 黒い壁と底を表示（ベースレイヤー）
     HgSetFillColor(HG_BLACK);
-    // レイヤー1と2で図形の色をかえる
-    HgWSetFillColor(layer1, HG_BLUE);   // 青
-    HgWSetFillColor(layer2, HG_GREEN);  // 緑
     // 壁と底の厚さはそれぞれ20
     HgBoxFill(0, 0, 20, WINDOWSIZE_H, 0);
     HgBoxFill(WINDOWSIZE_W - 20, 0, 20, WINDOWSIZE_H, 0);
@@ -62,7 +75,7 @@ void starttxt(void) {
     HgWSetFont(layer1, HG_MB, 40);  // 明朝体太字でテトリスと表示
     HgWText(layer1, WINDOWSIZE_W / 2 - 80, 300, "テトリス\n");
     HgWSetFont(layer1, HG_G, 20);  // ゴシック体で操作説明を表示
-    CenteredText(layer1, WINDOWSIZE_W / 2, 250, "操作方法\n");
+    /*CenteredText(layer1, WINDOWSIZE_W / 2, 250, "操作方法\n");
     CenteredText(layer1, WINDOWSIZE_W / 2, 220, "a:右移動\n");
     CenteredText(layer1, WINDOWSIZE_W / 2, 200, "d:左移動\n");
     CenteredText(layer1, WINDOWSIZE_W / 2, 180, "s:縦横切り替え\n");
@@ -70,7 +83,7 @@ void starttxt(void) {
     CenteredText(layer1, WINDOWSIZE_W / 2, 80,
                  "スペースキー入力でゲーム終了\n");
     CenteredText(layer1, WINDOWSIZE_W / 2, 60,
-                 "e:イージー n:ノーマル h:ハード\n");
+                 "e:イージー n:ノーマル h:ハード\n");*/
 }
 
 void gameover(void) {
@@ -86,9 +99,68 @@ void gameover(void) {
                  "キー入力でウィンドウが閉じます\n");
 }
 
+Coordinate move_Calc(Brock *pB, int x_move, int y_move) {
+    int i;
+    Coordinate coordinate;
+    for (i = 0; i < 4; i++) {
+        coordinate.x[i] = (pB->x[i] + x_move) * (SIZE + 5);
+        coordinate.y[i] = (pB->y[i] + y_move) * (SIZE + 5);
+    }
+    return coordinate;
+}
+
+Brock rotate_Calc(Brock pB, int brock_num, int num) {
+    int i;
+    Brock brock;
+
+    for (i = 0; i < BROCK_NUM; i++) {
+        if (brock_num == 0 || brock_num == 4 && (num == 1 || num == 3)) {
+            brock.x[i] = pB.y[i];
+            brock.y[i] = pB.x[i];
+        } else if (brock_num == 4) {
+            brock.x[i] = pB.y[i];
+            brock.y[i] = pB.x[i] ^ 1;
+        } else if ((brock_num == 1 && num == 1) ||
+                   (brock_num == 2 && num == 0)) {
+            brock.x[i] = pB.y[i];
+            brock.y[i] = pB.x[BROCK_NUM - i - 1];
+        } else if ((brock_num == 2 && num == 1) ||
+                   (brock_num == 1 && num == 0)) {
+            brock.x[i] = pB.y[BROCK_NUM - i - 1];
+            brock.y[i] = pB.x[i];
+        } else {
+            brock = pB;
+            break;
+        }
+    }
+    return brock;
+}
+
+int wall(Coordinate *pC, int array[9][15]) {
+    int i;
+    for (i = 0; i < BROCK_NUM; i++) {
+        if (pC->x[i] + SIZE > WINDOWSIZE_W || pC->x[i] < 10 ||
+            pC->x[i] / (SIZE + 5) != 0 &&
+                array[pC->x[i] / (SIZE + 5) - 1][pC->y[i] / (SIZE + 5)] == 1 ||
+            pC->x[i] / (SIZE + 5) != 9 &&
+                array[pC->x[i] / (SIZE + 5) + 1][pC->y[i] / (SIZE + 5)])
+            return 1;
+    }
+    return 0;
+}
+
+// #define DEBUG
+#ifdef DEBUG
+
 int main() {
     hgevent *event;  // イベントのためのもの
     doubleLayer layers;
+    Brock brocks[5] = {{{1, 2, 3, 4}, {1, 1, 1, 1}, HG_BLUE},
+                       {{1, 2, 2, 3}, {1, 1, 2, 2}, HG_RED},
+                       {{1, 2, 2, 3}, {2, 2, 1, 1}, HG_GREEN},
+                       {{1, 2, 1, 2}, {2, 2, 1, 1}, HG_YELLOW},
+                       {{2, 1, 2, 3}, {2, 1, 1, 1}, HG_PURPLE}};
+
     // 変数の宣言
     int key;      // 入力したキーを覚えておくための変数
     int i, j, k;  // カウンタ変数
@@ -97,7 +169,8 @@ int main() {
     int tate;   // y座標を変えるための変数
     int count;  // 横と縦を切り替えるためのカウント変数
     int num;    // 消した列の数を数えるための変数
-    int array[6][9] = {};  // どこにブロックが落ちたか覚えておくための配列
+    int sum;
+    int array[8][10] = {};  // どこにブロックが落ちたか覚えておくための配列
 
     tate = 0;  // 初期化
     num = 0;
@@ -133,11 +206,11 @@ int main() {
 
     HgSetEventMask(HG_KEY_DOWN);  // キー入力のためのイベントセット
 
-    while (tate != 8) {  // 以下ゲーム部分
+    while (tate != 10) {  // 以下ゲーム部分
         // 乱数を一つ生成
         // 乱数でブロッック数を1〜3にする
         srand(time(NULL));
-        random = rand() % 3;
+        random = rand() % 5;
         // printf("%d\n", random); //確認用
 
         // ブロックは端から3つ目から横で登場
@@ -295,10 +368,12 @@ int main() {
         }
 
         // 一列揃ったら消す
-        for (i = 0; i < 8; i++) {
-            if (array[0][i] + array[1][i] + array[2][i] + array[3][i] +
-                    array[4][i] + array[5][i] ==
-                6) {
+        for (i = 0; i < 10; i++) {
+            sum = 0;
+            for (j = 0; j < 8; j++) {
+                sum = array[j][i];
+            }
+            if (sum == 6) {
                 for (j = i; j < 8; j++) {
                     for (k = 0; k < 6; k++) {
                         array[k][j] = array[k][j + 1];
@@ -311,10 +386,10 @@ int main() {
 
         // 落下したブロック（配列の中身が1になっている場所にあるブロック）をレイヤー2で表示
         HgLClear(layer2);
-        for (i = 0; i < 8; i++) {
-            for (j = 0; j < 6; j++) {
+        for (i = 0; i < 10; i++) {
+            for (j = 1; j < 7; j++) {
                 if (array[j][i] == 1) {
-                    HgWBoxFill(layer2, 25 + 60 * j, 25 + 60 * i, SIZE, SIZE, 0);
+                    box(brocks[random]);
                 }
             }
         }
@@ -330,3 +405,133 @@ int main() {
     HgClose();
     return 0;
 }
+
+#else
+
+int main() {
+    hgevent *event;  // イベントのためのもの
+    doubleLayer layers;
+    Brock brocks[5] = {{{0, 1, 2, 3}, {0, 0, 0, 0}, HG_BLUE},
+                       {{0, 1, 1, 2}, {0, 0, 1, 1}, HG_RED},
+                       {{0, 1, 1, 2}, {1, 1, 0, 0}, HG_GREEN},
+                       {{0, 1, 0, 1}, {1, 1, 0, 0}, HG_ORANGE},
+                       {{1, 0, 1, 2}, {1, 0, 0, 0}, HG_PURPLE}};
+
+    Brock game_brock;
+    Coordinate coordinate;
+
+    int layer1, layer2;
+    int i, j, k, l;
+    int key;
+    int random_num;
+    int x_move, y_move;
+    int x_max, x_min, y_max, y_min;
+    int sum;
+    int num;
+    int array[9][15] = {};
+
+    y_move = 0;
+
+    HgOpen(WINDOWSIZE_W, WINDOWSIZE_H);
+
+    HgSetEventMask(HG_KEY_DOWN);
+
+    layer1 = HgWAddLayer(0);
+    layer2 = HgWAddLayer(0);
+    layers = HgWAddDoubleLayer(0);
+
+    HgSetTitle("Tetoris");
+    HgWSetFillColor(layer1, HG_LGRAY);
+
+    // starttxt();
+    // HgGetChar();
+
+    srandom(time(NULL));
+    while (y_move < 9) {
+        random_num = random() % 5;
+        game_brock = brocks[random_num];
+        x_move = 3;
+        num = 0;
+        HgWSetFillColor(layer2, game_brock.color);
+
+        for (i = 10; i >= 0 + y_move; i--) {
+            event = HgEventNonBlocking();
+
+            y_move = 0;
+
+            if (event != NULL) {
+                key = event->ch;
+                if (key == HG_R_ARROW && wall(&coordinate, array) == 0)
+                    x_move += 1;
+                if (key == HG_L_ARROW && wall(&coordinate, array) == 0)
+                    x_move -= 1;
+                if (key == HG_U_ARROW) {
+                    num++;
+                    game_brock = rotate_Calc(game_brock, random_num, num % 2);
+                }
+                if (key == ' ') {
+                    HgLClear(layer2);
+                    CenteredText(layer2, WINDOWSIZE_W / 2, WINDOWSIZE_H / 2,
+                                 "終了します\n");
+                    HgSleep(3);  // 3秒後に終了
+                    HgClose();
+                    return 0;
+                }
+            }
+            coordinate = move_Calc(&game_brock, x_move, i);
+
+            for (j = 0; j < BROCK_NUM; j++) {
+                if (coordinate.y[j] / (SIZE + 5) != 0 &&
+                    array[coordinate.x[j] / (SIZE + 5)]
+                         [coordinate.y[j] / (SIZE + 5) - 1] == 1) {
+                    y_move = coordinate.y[j] / (SIZE + 5);
+                    break;
+                    // printf("%d\n",y_move);
+                }
+            }
+            HgLClear(layer2);
+            box(coordinate, layer2);
+            HgSleep(0.5);
+        }
+
+        for (i = 0; i < BROCK_NUM; i++) {
+            array[coordinate.x[i] / (SIZE + 5)][coordinate.y[i] / (SIZE + 5)] =
+                1;
+            printf("%d,%d\n", coordinate.x[i] / (SIZE + 5),
+                   coordinate.y[i] / (SIZE + 5));
+        }
+
+        for (i = 0; i < 15; i++) {
+            sum = 0;
+            if (array[0][i] == 0) continue;
+            for (k = 0; k < 9; k++) {
+                sum += array[k][i];
+            }
+            if (sum == 9) {
+                for (j = i; j < 14; j++) {
+                    for (k = 0; k < 9; k++) {
+                        array[k][j] = array[k][j + 1];
+                    }
+                }
+                j--;
+            }
+        }
+
+        HgLClear(layer1);
+        for (i = 0; i < 15; i++) {
+            for (k = 0; k < 9; k++) {
+                if (array[k][i] == 1) {
+                    HgWBoxFill(layer1, k * (SIZE + 5), i * (SIZE + 5), SIZE,
+                               SIZE, 1);
+                }
+            }
+        }
+    }
+
+    HgGetChar();
+    HgClose();
+
+    return 0;
+}
+
+#endif
