@@ -248,7 +248,7 @@ int main() {
             HgWSetFillColor(layer2, brocks[random_num].color);
 
             box(coordinate, layer2);
-            HgSleep(0.5);
+            HgSleep(0.1);
         }
 
         for (i = 0; i < BROCK_NUM; i++) {
